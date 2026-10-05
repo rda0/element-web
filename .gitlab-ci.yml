@@ -30,7 +30,6 @@ variables:
     - nodeenv --node=24.14.0 --prebuilt env
     - source env/bin/activate
     - npm install -g --no-package-lock --no-save yarn
-    #- npm install -g --no-package-lock --no-save pnpm
     - corepack enable
     - corepack prepare "pnpm@$(node -p "require('./package.json').devEngines.packageManager.version.split('+')[0]")" --activate
     - pnpm --version
@@ -47,10 +46,7 @@ variables:
     - cp -a ../../apps/web/res/media/message.* webapp.unpacked/media/
     - npx asar pack ./webapp.unpacked webapp.asar
     - export SQLCIPHER_BUNDLED=${SQLCIPHER_STATIC}
-    #- chmod +x ../../node_modules/7zip-bin/linux/*/7za
     - pnpm build:native
-    #- npx ts-node scripts/generate-builder-config.ts
-    #- pnpm build --publish never --config electron-builder.json
     # Iteration ID will be used as deb revision by electron-builder (fpm)
     - unset CI_PIPELINE_IID
     - pnpm build --publish never
