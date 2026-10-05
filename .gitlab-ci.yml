@@ -45,8 +45,6 @@ variables:
     - npx asar extract webapp.orig.asar ./webapp.unpacked
     - cp -a ../../apps/web/res/media/message.* webapp.unpacked/media/
     - npx asar pack ./webapp.unpacked webapp.asar
-    - export SQLCIPHER_BUNDLED=${SQLCIPHER_STATIC}
-    - pnpm build:native
     # Iteration ID will be used as deb revision by electron-builder (fpm)
     - unset CI_PIPELINE_IID
     - pnpm build --publish never
@@ -85,7 +83,6 @@ variables:
           cp ..\..\apps\web\res\media\message.* webapp.unpacked\media\ ;
           npx asar pack ./webapp.unpacked webapp.asar ;
 
-          pnpm run build:native --target x86_64-pc-windows-msvc ;
           pnpm run build --publish never -w squirrel;
           pnpm run build --publish never -w msi;
         }
