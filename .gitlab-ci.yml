@@ -16,9 +16,9 @@ variables:
     - rm -rf ${HOME}/.local
     - rm -rf ${HOME}/.cargo
     - rm -rf ${HOME}/.npm
+    - rm -rf ${HOME}/.nx
     - rm -rf ${HOME}/.rustup
     - rm -rf ${HOME}/.electron-gyp
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --no-modify-path --quiet -y
 
 .build_linux:
   extends: .tag
@@ -33,7 +33,6 @@ variables:
     - corepack enable
     - corepack prepare "pnpm@$(node -p "require('./package.json').devEngines.packageManager.version.split('+')[0]")" --activate
     - pnpm --version
-    - source ${HOME}/.cargo/env
     - export YARN_CACHE_FOLDER=env/cache
     - cd apps/desktop
     - pnpm install
@@ -63,7 +62,7 @@ variables:
     - docker run -v .:c:\scratch element_build_tools powershell -noprofile -command {
           cd c:\scratch ;
 
-          choco install -y nodejs-lts;
+          choco install -y nodejs-lts ;
 
           $env:path = "$($env:path);C:\Program Files\nodejs\;$($env:APPDATA)\npm";
 
@@ -73,11 +72,8 @@ variables:
           corepack prepare "pnpm@$pnpmVersion" --activate ;
           pnpm --version ;
 
-          rustup default stable ;
-          rustup target add x86_64-pc-windows-msvc ;
-
           cd apps\desktop ;
-          pnpm install --frozen-lockfile --filter element-desktop;
+          pnpm install --frozen-lockfile --filter element-desktop ;
 
           mkdir element.phys.ethz.ch ;
           curl.exe https://element.phys.ethz.ch/config.json -o element.phys.ethz.ch/config.json ;
@@ -87,8 +83,7 @@ variables:
           cp ..\..\apps\web\res\media\message.* webapp.unpacked\media\ ;
           npx asar pack ./webapp.unpacked webapp.asar ;
 
-          pnpm run build --publish never -w squirrel;
-          pnpm run build --publish never -w msi;
+          pnpm run build --publish never ;
         }
     - $depRoot = 'C:\scratch\deployment_root\element-desktop\'
     - if( -not ( Test-Path $depRoot )){ mkdir $depRoot }
