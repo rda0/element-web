@@ -55,6 +55,10 @@ variables:
 .build_windows:
   extends: .tag
   stage: build
+  variables:
+    GIT_CONFIG_COUNT: "1"
+    GIT_CONFIG_KEY_0: "core.longpaths"
+    GIT_CONFIG_VALUE_0: "true"
   script:
     - docker run -v .:c:\scratch element_build_tools powershell -noprofile -command {
           cd c:\scratch ;
