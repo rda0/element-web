@@ -30,8 +30,7 @@ variables:
     - nodeenv --node=24.14.0 --prebuilt env
     - source env/bin/activate
     - npm install -g --no-package-lock --no-save yarn
-    - corepack enable
-    - corepack prepare "pnpm@$(node -p "require('./package.json').devEngines.packageManager.version.split('+')[0]")" --activate
+    - npm install -g --no-package-lock --no-save pnpm
     - pnpm --version
     - export YARN_CACHE_FOLDER=env/cache
     - cd apps/desktop
@@ -67,9 +66,7 @@ variables:
           $env:path = "$($env:path);C:\Program Files\nodejs\;$($env:APPDATA)\npm";
 
           npm install --global yarn ;
-          corepack enable ;
-          $pnpmVersion = node -p "require('./package.json').devEngines.packageManager.version.split('+')[0]" ;
-          corepack prepare "pnpm@$pnpmVersion" --activate ;
+          npm install --global pnpm ;
           pnpm --version ;
 
           cd apps\desktop ;
