@@ -8,6 +8,11 @@ variables:
   except:
     - branches
 
+stages:
+  - .pre
+  - build-web
+  - build
+
 .install_linux:
   extends: .tag
   stage: .pre
@@ -25,44 +30,28 @@ variables:
 .build_linux:
   extends: .tag
   stage: build
-  parallel:
-    matrix:
-      - SQLCIPHER_STATIC: ['1']
   script:
-    - nodeenv --node=24.14.0 --prebuilt env
+    - nodeenv --node=lts --prebuilt env
     - source env/bin/activate
-    - npm install -g --no-package-lock --no-save yarn
+    #- npm install -g --no-package-lock --no-save yarn
     - npm install -g --no-package-lock --no-save pnpm
     - pnpm --version
     - export YARN_CACHE_FOLDER=env/cache
+    - cd apps/desktop
     - pnpm install
-    - export VERSION="${CI_COMMIT_REF_NAME##*dphys-}"
-    # fail if desktop package.json drifts from the branch: fetch resolves the
-    # tarball name from the package.json version and would silently fall back to github
-    - test "v$(node -p "require('./apps/desktop/package.json').version")" = "$VERSION"
-    # build web app from this checkout
-    - cd apps/web
-    - CI_PACKAGE=true DIST_VERSION=${VERSION} scripts/package.sh
-    - cd ../desktop
-    # build desktop against our web build instead of the github release
+    # web tarball from the build-web job (pipeline artifact), builds desktop against our web build
     - mkdir -p packages
-    - cp ../../apps/web/dist/element-${VERSION}.tar.gz packages/
+    - cp ../../apps/web/dist/element-*.tar.gz packages/
     - mkdir -p element.phys.ethz.ch
     - rm -f element.phys.ethz.ch/config.json
     - wget https://element.phys.ethz.ch/config.json -O element.phys.ethz.ch/config.json
-    # if packages/element-vXX.tar.gz already exists, it skips the download and uses our own tarball
     - pnpm run fetch --noverify --cfgdir 'element.phys.ethz.ch'
-    #- mv webapp.asar webapp.orig.asar
-    #- npx asar extract webapp.orig.asar ./webapp.unpacked
-    #- cp -a ../../apps/web/res/media/message.* webapp.unpacked/media/
-    #- npx asar pack ./webapp.unpacked webapp.asar
     # Iteration ID will be used as deb revision by electron-builder (fpm)
     - unset CI_PIPELINE_IID
     - pnpm build --publish never
-    - mkdir -p "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
-    - cp dist/*.deb "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
-    - cp dist/*.tar.gz "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
-    - cp ../../apps/web/dist/element-$VERSION.tar.gz "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
+    - mkdir -p "/home/gitlab-runner/packages/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME##*dphys-}"
+    - cp dist/*.deb "/home/gitlab-runner/packages/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME##*dphys-}"
+    - cp dist/*.tar.gz "/home/gitlab-runner/packages/${CI_PROJECT_NAME}/${CI_COMMIT_REF_NAME##*dphys-}"
 
 .build_windows:
   extends: .tag
@@ -72,34 +61,26 @@ variables:
     GIT_CONFIG_KEY_0: "core.longpaths"
     GIT_CONFIG_VALUE_0: "true"
   script:
+    - $ProgressPreference = 'SilentlyContinue'
     - docker run -v .:c:\scratch element_build_tools powershell -noprofile -command {
           cd c:\scratch ;
-
           choco install -y nodejs-lts ;
-
           $env:path = "$($env:path);C:\Program Files\nodejs\;$($env:APPDATA)\npm";
-
-          npm install --global yarn ;
           npm install --global pnpm ;
           pnpm --version ;
-
           cd apps\desktop ;
           pnpm install --frozen-lockfile --filter element-desktop ;
-
+          mkdir packages ;
+          copy ..\..\apps\web\dist\element-*.tar.gz packages\ ;
           mkdir element.phys.ethz.ch ;
           curl.exe https://element.phys.ethz.ch/config.json -o element.phys.ethz.ch/config.json ;
           pnpm run fetch --noverify --cfgdir element.phys.ethz.ch ;
-          mv webapp.asar webapp.orig.asar ;
-          npx asar extract webapp.orig.asar ./webapp.unpacked ;
-          cp ..\..\apps\web\res\media\message.* webapp.unpacked\media\ ;
-          npx asar pack ./webapp.unpacked webapp.asar ;
-
           pnpm run build --publish never ;
         }
     - $depRoot = 'C:\scratch\deployment_root\element-desktop\'
     - if( -not ( Test-Path $depRoot )){ mkdir $depRoot }
     - $outFile = "$depRoot\Element_$($CI_COMMIT_REF_NAME -replace '.*dphys-','').zip"
-    - if(( Test-Path $outFile)){ remove-item -force $outFile }
+    - if(( Test-Path $outFile )){ remove-item -force $outFile }
     - Compress-Archive .\apps\desktop\dist\win-unpacked\* $outFile
     - cp .\apps\desktop\dist\Element*.msi $depRoot
     - cp .\apps\desktop\dist\squirrel-windows\Element*.exe $depRoot
@@ -112,6 +93,31 @@ install-trixie:
     DIST_CODENAME: "trixie"
   tags:
     - trixie
+
+build-web:
+  extends: .tag
+  stage: build-web
+  tags:
+    - trixie
+  script:
+    - nodeenv --node=lts --prebuilt env
+    - source env/bin/activate
+    - npm install -g --no-package-lock --no-save pnpm
+    - export YARN_CACHE_FOLDER=env/cache
+    - pnpm install
+    - export VERSION="${CI_COMMIT_REF_NAME##*dphys-}"
+    # fetch in the desktop jobs resolves the tarball name from apps/desktop/package.json
+    # and would silently fall back to github if VERSION differs
+    - test "v$(node -p "require('./apps/desktop/package.json').version")" = "${VERSION}"
+    - cd apps/web
+    - CI_PACKAGE=true DIST_VERSION=${VERSION} scripts/package.sh
+    # web-instance tarball next to the desktop packages (adjust path to your deploy convention)
+    - mkdir -p "/home/gitlab-runner/packages/${CI_PROJECT_NAME}/${VERSION#v}"
+    - cp "dist/element-${VERSION}.tar.gz" "/home/gitlab-runner/packages/${CI_PROJECT_NAME}/${VERSION#v}"
+  artifacts:
+    paths:
+      - apps/web/dist/element-*.tar.gz
+    expire_in: 1 week
 
 build-trixie:
   extends: .build_linux
