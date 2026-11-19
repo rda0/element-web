@@ -191,6 +191,39 @@ describe("<RoomListItemMoreOptionsMenu />", () => {
         expect(mockCallbacks.onCopyRoomLink).toHaveBeenCalled();
     });
 
+    it("should show settings option when canOpenRoomSettings is true", async () => {
+        const user = userEvent.setup();
+        renderMenu({ canOpenRoomSettings: true });
+
+        const button = screen.getByRole("button", { name: "More Options" });
+        await user.click(button);
+
+        expect(screen.getByRole("menuitem", { name: "Settings" })).toBeInTheDocument();
+    });
+
+    it("should not show settings option when canOpenRoomSettings is false", async () => {
+        const user = userEvent.setup();
+        renderMenu({ canOpenRoomSettings: false });
+
+        const button = screen.getByRole("button", { name: "More Options" });
+        await user.click(button);
+
+        expect(screen.queryByRole("menuitem", { name: "Settings" })).not.toBeInTheDocument();
+    });
+
+    it("should call onOpenRoomSettings when settings clicked", async () => {
+        const user = userEvent.setup();
+        renderMenu({ canOpenRoomSettings: true });
+
+        const button = screen.getByRole("button", { name: "More Options" });
+        await user.click(button);
+
+        const settingsOption = screen.getByRole("menuitem", { name: "Settings" });
+        await user.click(settingsOption);
+
+        expect(mockCallbacks.onOpenRoomSettings).toHaveBeenCalled();
+    });
+
     it("should show leave room option", async () => {
         const user = userEvent.setup();
         renderMenu();

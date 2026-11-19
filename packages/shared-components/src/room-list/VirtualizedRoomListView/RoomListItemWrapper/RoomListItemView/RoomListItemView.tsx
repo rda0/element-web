@@ -95,6 +95,8 @@ export interface RoomListItemViewSnapshot {
     canMarkAsRead: boolean;
     /** Can mark the room as unread */
     canMarkAsUnread: boolean;
+    /** Can open the room settings dialog */
+    canOpenRoomSettings: boolean;
     /** The room's notification state */
     roomNotifState: RoomNotifState;
     /** Available sections the room can be assigned to */
@@ -127,6 +129,8 @@ export interface RoomListItemViewActions {
     onInvite: () => void;
     /** Called when copying the room link */
     onCopyRoomLink: () => void;
+    /** Called when opening the room settings dialog */
+    onOpenRoomSettings: () => void;
     /** Called when leaving the room */
     onLeaveRoom: () => void;
     /** Called when setting the room notification state */

@@ -36,6 +36,7 @@ describe("PreviewRoomListItemViewModel", () => {
             isLowPriority: false,
             isDm: false,
             canChangeSection: false,
+            canOpenRoomSettings: false,
         });
         // The avatar renderer tells the preview data apart from a Room by its class
         expect(vm.getSnapshot().room).toBeInstanceOf(PreviewRoomAvatarData);
@@ -65,6 +66,7 @@ describe("PreviewRoomListItemViewModel", () => {
         vm.onToggleLowPriority();
         vm.onInvite();
         vm.onCopyRoomLink();
+        vm.onOpenRoomSettings();
         vm.onLeaveRoom();
         vm.onSetRoomNotifState();
         vm.onCreateSection();

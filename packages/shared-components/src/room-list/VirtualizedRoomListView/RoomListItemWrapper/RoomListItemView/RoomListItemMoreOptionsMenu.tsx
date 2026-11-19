@@ -20,6 +20,7 @@ import {
     CheckIcon,
     MinusIcon,
 } from "@vector-im/compound-design-tokens/assets/web/icons";
+import SettingsIcon from "@vector-im/compound-design-tokens/assets/web/icons/settings";
 
 import { _t } from "../../../../core/i18n/i18n";
 import { useViewModel, type ViewModel } from "../../../../core/viewmodel";
@@ -132,6 +133,15 @@ export function MoreOptionContent({ vm }: MoreOptionContentProps): JSX.Element {
                     Icon={LinkIcon}
                     label={_t("room_list|more_options|copy_link")}
                     onSelect={vm.onCopyRoomLink}
+                    onClick={(evt) => evt.stopPropagation()}
+                    hideChevron={true}
+                />
+            )}
+            {snapshot.canOpenRoomSettings && (
+                <MenuItem
+                    Icon={SettingsIcon}
+                    label={_t("room_list|more_options|settings")}
+                    onSelect={vm.onOpenRoomSettings}
                     onClick={(evt) => evt.stopPropagation()}
                     hideChevron={true}
                 />

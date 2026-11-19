@@ -344,6 +344,9 @@ export class RoomListItemViewModel
 
         const canInvite = room.canInvite(client.getUserId()!) && !isDm && shouldShowComponent(UIComponent.InviteUsers);
         const canCopyRoomLink = !isDm;
+        // The room settings dialog is only offered for rooms the user has joined; the old room
+        // list's context menu didn't offer it for invited, knocking or archived rooms either
+        const canOpenRoomSettings = room.getMyMembership() === KnownMembership.Join;
 
         // Get the current room notification state from EchoChamber
         const echoChamber = EchoChamber.forRoom(room);
@@ -412,6 +415,7 @@ export class RoomListItemViewModel
             canCopyRoomLink,
             canMarkAsRead,
             canMarkAsUnread,
+            canOpenRoomSettings,
             roomNotifState,
             sections,
             areSectionsEnabled,
@@ -459,6 +463,14 @@ export class RoomListItemViewModel
             action: "copy_room",
             room_id: this.props.room.roomId,
         });
+    };
+
+    public onOpenRoomSettings = (): void => {
+        dispatcher.dispatch({
+            action: "open_room_settings",
+            room_id: this.props.room.roomId,
+        });
+        PosthogTrackers.trackInteraction("WebRoomListRoomTileContextMenuSettingsItem");
     };
 
     public onLeaveRoom = (): void => {

@@ -36,6 +36,7 @@ export const defaultSnapshot: RoomListItemViewSnapshot = {
     canCopyRoomLink: true,
     canMarkAsRead: false,
     canMarkAsUnread: true,
+    canOpenRoomSettings: true,
     roomNotifState: RoomNotifState.AllMessages,
     sections: [
         {

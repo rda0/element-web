@@ -82,6 +82,7 @@ export class PreviewRoomListItemViewModel
             canCopyRoomLink: false,
             canMarkAsRead: false,
             canMarkAsUnread: false,
+            canOpenRoomSettings: false,
             roomNotifState: RoomNotifState.AllMessages,
             sections: [],
             areSectionsEnabled: false,
@@ -104,6 +105,7 @@ export class PreviewRoomListItemViewModel
     public onToggleLowPriority = (): void => {};
     public onInvite = (): void => {};
     public onCopyRoomLink = (): void => {};
+    public onOpenRoomSettings = (): void => {};
     public onLeaveRoom = (): void => {};
     public onSetRoomNotifState = (): void => {};
     public onCreateSection = (): void => {};

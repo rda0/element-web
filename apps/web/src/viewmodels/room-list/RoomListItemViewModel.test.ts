@@ -559,6 +559,18 @@ describe("RoomListItemViewModel", () => {
             });
         });
 
+        it("should dispatch open_room_settings action when onOpenRoomSettings is called", () => {
+            viewModel = new RoomListItemViewModel({ room, client: matrixClient });
+            const dispatchSpy = vi.spyOn(dispatcher, "dispatch");
+
+            viewModel.onOpenRoomSettings();
+
+            expect(dispatchSpy).toHaveBeenCalledWith({
+                action: "open_room_settings",
+                room_id: "!room:server",
+            });
+        });
+
         it("should dispatch leave_room action when onLeaveRoom is called for normal room", () => {
             room.tags = {};
             viewModel = new RoomListItemViewModel({ room, client: matrixClient });
@@ -709,6 +721,18 @@ describe("RoomListItemViewModel", () => {
 
             viewModel = new RoomListItemViewModel({ room, client: matrixClient });
             expect(viewModel.getSnapshot().canChangeSection).toBe(expected);
+        });
+
+        it.each([
+            { membership: KnownMembership.Join, expected: true },
+            { membership: KnownMembership.Invite, expected: false },
+            { membership: KnownMembership.Leave, expected: false },
+            { membership: KnownMembership.Knock, expected: false },
+        ])("should set canOpenRoomSettings to $expected when membership is $membership", ({ membership, expected }) => {
+            vi.spyOn(room, "getMyMembership").mockReturnValue(membership);
+
+            viewModel = new RoomListItemViewModel({ room, client: matrixClient });
+            expect(viewModel.getSnapshot().canOpenRoomSettings).toBe(expected);
         });
     });
 
