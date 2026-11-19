@@ -11,6 +11,8 @@ variables:
 .install_linux:
   extends: .tag
   stage: .pre
+  variables:
+    GIT_STRATEGY: none
   script:
     - rm -rf ${HOME}/.cache
     - rm -rf ${HOME}/.local
@@ -33,22 +35,34 @@ variables:
     - npm install -g --no-package-lock --no-save pnpm
     - pnpm --version
     - export YARN_CACHE_FOLDER=env/cache
-    - cd apps/desktop
     - pnpm install
+    - export VERSION="${CI_COMMIT_REF_NAME##*dphys-}"
+    # fail if desktop package.json drifts from the branch: fetch resolves the
+    # tarball name from the package.json version and would silently fall back to github
+    - test "v$(node -p "require('./apps/desktop/package.json').version")" = "$VERSION"
+    # build web app from this checkout
+    - cd apps/web
+    - CI_PACKAGE=true DIST_VERSION=${VERSION} scripts/package.sh
+    - cd ../desktop
+    # build desktop against our web build instead of the github release
+    - mkdir -p packages
+    - cp ../../apps/web/dist/element-${VERSION}.tar.gz packages/
     - mkdir -p element.phys.ethz.ch
     - rm -f element.phys.ethz.ch/config.json
     - wget https://element.phys.ethz.ch/config.json -O element.phys.ethz.ch/config.json
+    # if packages/element-vXX.tar.gz already exists, it skips the download and uses our own tarball
     - pnpm run fetch --noverify --cfgdir 'element.phys.ethz.ch'
-    - mv webapp.asar webapp.orig.asar
-    - npx asar extract webapp.orig.asar ./webapp.unpacked
-    - cp -a ../../apps/web/res/media/message.* webapp.unpacked/media/
-    - npx asar pack ./webapp.unpacked webapp.asar
+    #- mv webapp.asar webapp.orig.asar
+    #- npx asar extract webapp.orig.asar ./webapp.unpacked
+    #- cp -a ../../apps/web/res/media/message.* webapp.unpacked/media/
+    #- npx asar pack ./webapp.unpacked webapp.asar
     # Iteration ID will be used as deb revision by electron-builder (fpm)
     - unset CI_PIPELINE_IID
     - pnpm build --publish never
     - mkdir -p "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
     - cp dist/*.deb "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
     - cp dist/*.tar.gz "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
+    - cp ../../apps/web/dist/element-$VERSION.tar.gz "/home/gitlab-runner/packages/${CI_PROJECT_NAME}${SQLCIPHER_STATIC/1/-static}/${CI_COMMIT_REF_NAME##*dphys-}"
 
 .build_windows:
   extends: .tag
